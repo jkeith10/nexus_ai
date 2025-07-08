@@ -1,0 +1,42 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🧰 Maintenance'
+    labels:
+      - 'chore'
+      - 'dependencies'
+template: |
+  ## What's Changed
+  $CHANGES
+
+  ## 🔗 Links
+  - [Documentation](https://github.com/jkeith10/nexus_ai/tree/main/docs)
+  - [API Reference](https://github.com/jkeith10/nexus_ai/tree/main/docs/api-reference.md)
+  - [Contributing Guide](https://github.com/jkeith10/nexus_ai/blob/main/CONTRIBUTING.md)
+
+  ## 📦 Installation
+  ```bash
+  git clone https://github.com/jkeith10/nexus_ai.git
+  cd nexus_ai
+  docker-compose up -d
+  ```
+
+  ## 🎯 Quick Start
+  Visit http://localhost:3000 to access the dashboard.
+
+  ## 🤝 Contributing
+  We welcome contributions! Please see our [Contributing Guide](https://github.com/jkeith10/nexus_ai/blob/main/CONTRIBUTING.md) for details.
+
+  ## 📞 Support
+  - [GitHub Issues](https://github.com/jkeith10/nexus_ai/issues)
+  - [Discord Community](https://discord.gg/nexus-ai)
+  - [Documentation](https://github.com/jkeith10/nexus_ai/tree/main/docs) 

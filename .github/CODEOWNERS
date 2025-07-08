@@ -1,0 +1,33 @@
+# Global owners
+* @jkeith10
+
+# Rust core components
+/core/ @jkeith10
+
+# Python AI modules
+/ai/ @jkeith10
+
+# API layer
+/api/ @jkeith10
+
+# UI components
+/ui/ @jkeith10
+
+# Infrastructure
+/infra/ @jkeith10
+
+# Documentation
+/docs/ @jkeith10
+
+# Scripts
+/scripts/ @jkeith10
+
+# GitHub workflows
+/.github/ @jkeith10
+
+# Configuration files
+*.yml @jkeith10
+*.yaml @jkeith10
+*.toml @jkeith10
+*.json @jkeith10
+*.md @jkeith10 
