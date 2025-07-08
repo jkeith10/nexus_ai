@@ -101,7 +101,7 @@ jobs:
         npm run type-check
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         files: ./ai/coverage.xml,./api/coverage.xml
         flags: python,rust,typescript
