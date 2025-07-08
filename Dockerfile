@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ai/ .
 RUN python -m compileall .
 
-FROM node:18-alpine as node-builder
+FROM node:24-alpine as node-builder
 
 WORKDIR /app
 COPY ui/package*.json ./
