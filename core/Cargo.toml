@@ -1,0 +1,27 @@
+[package]
+name = "nexus_core"
+version = "0.1.0"
+edition = "2021"
+
+description = "Quantum-inspired decision engine for Nexus AI Agent Framework"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+rand = "0.8"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.10"
+anyhow = "1.0"
+thiserror = "1.0"
+futures = "0.3"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+metrics = "0.21"
+metrics-exporter-prometheus = "0.12"
+clap = { version = "4.0", features = ["derive"] }
+config = "0.13"
+dotenv = "0.15" 

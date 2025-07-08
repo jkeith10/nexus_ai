@@ -1,0 +1,279 @@
+version: '3.8'
+
+services:
+  # Core (Rust) Quantum Decision Engine
+  nexus-core:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    container_name: nexus-core
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info
+      - QUANTUM_ENGINE_ENABLED=true
+      - COGNITIVE_NETWORK_NODES=4
+      - AGENT_ORCHESTRATOR_MAX_AGENTS=100
+      - SECURITY_QUANTUM_RESISTANT=true
+    volumes:
+      - ./core/config:/app/config
+      - nexus-core-data:/app/data
+    networks:
+      - nexus-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Module (Python) - Distributed Neural Networks
+  nexus-ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: nexus-ai
+    ports:
+      - "8081:8081"
+    environment:
+      - PYTHONPATH=/app
+      - RAY_ADDRESS=nexus-ray:6379
+      - CUDA_VISIBLE_DEVICES=0
+      - LEARNING_RATE=0.001
+      - BATCH_SIZE=32
+      - MAX_SEQUENCE_LENGTH=512
+    volumes:
+      - ./ai/models:/app/models
+      - ./ai/data:/app/data
+      - nexus-ai-data:/app/workspace
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-ray
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Ray Cluster for Distributed Computing
+  nexus-ray:
+    image: rayproject/ray:latest
+    container_name: nexus-ray
+    ports:
+      - "6379:6379"
+      - "8265:8265"
+    command: ray start --head --port=6379 --dashboard-port=8265
+    environment:
+      - RAY_DISABLE_DOCKER_CPU_WARNING=1
+    volumes:
+      - nexus-ray-data:/tmp/ray
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # API Server (FastAPI)
+  nexus-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: nexus-api
+    ports:
+      - "8000:8000"
+    environment:
+      - CORE_SERVICE_URL=http://nexus-core:8080
+      - AI_SERVICE_URL=http://nexus-ai:8081
+      - DATABASE_URL=postgresql://nexus:password@nexus-db:5432/nexus
+      - REDIS_URL=redis://nexus-redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key
+      - CORS_ORIGINS=http://localhost:3000,http://nexus-ui:3000
+    volumes:
+      - ./api/config:/app/config
+      - nexus-api-logs:/app/logs
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-core
+      - nexus-ai
+      - nexus-db
+      - nexus-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # UI (React)
+  nexus-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: nexus-ui
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000
+      - REACT_APP_ENVIRONMENT=development
+    volumes:
+      - ./ui/src:/app/src
+      - ./ui/public:/app/public
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-api
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  nexus-db:
+    image: postgres:15-alpine
+    container_name: nexus-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=nexus
+      - POSTGRES_USER=nexus
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - nexus-db-data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d
+    networks:
+      - nexus-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  nexus-redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - nexus-redis-data:/data
+    networks:
+      - nexus-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring Stack
+  nexus-prometheus:
+    image: prom/prometheus:latest
+    container_name: nexus-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - nexus-prometheus-data:/prometheus
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  nexus-grafana:
+    image: grafana/grafana:latest
+    container_name: nexus-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./infra/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infra/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - nexus-grafana-data:/var/lib/grafana
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-prometheus
+    restart: unless-stopped
+
+  # Message Queue
+  nexus-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: nexus-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=nexus
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - nexus-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # Elasticsearch for Logging
+  nexus-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: nexus-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - nexus-elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # Kibana for Log Visualization
+  nexus-kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: nexus-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://nexus-elasticsearch:9200
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-elasticsearch
+    restart: unless-stopped
+
+  # Filebeat for Log Collection
+  nexus-filebeat:
+    image: docker.elastic.co/beats/filebeat:8.8.0
+    container_name: nexus-filebeat
+    user: root
+    volumes:
+      - ./infra/logging/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - nexus-network
+    depends_on:
+      - nexus-elasticsearch
+    restart: unless-stopped
+
+volumes:
+  nexus-core-data:
+  nexus-ai-data:
+  nexus-ray-data:
+  nexus-api-logs:
+  nexus-db-data:
+  nexus-redis-data:
+  nexus-prometheus-data:
+  nexus-grafana-data:
+  nexus-rabbitmq-data:
+  nexus-elasticsearch-data:
+
+networks:
+  nexus-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 
