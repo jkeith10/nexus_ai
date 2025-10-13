@@ -5,7 +5,7 @@ WORKDIR /app
 COPY core/ .
 RUN cargo build --release
 
-FROM python:3.11-slim as python-builder
+FROM python:3.14-slim as python-builder
 
 WORKDIR /app
 COPY ai/requirements.txt .
@@ -24,7 +24,7 @@ COPY ui/ .
 RUN npm run build
 
 # Final stage
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
