@@ -152,7 +152,7 @@ jobs:
         cargo audit --json > cargo-audit-report.json || true
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v5
       with:
         name: security-reports
         path: |
