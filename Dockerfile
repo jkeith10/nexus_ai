@@ -1,5 +1,5 @@
 # Multi-stage build for Nexus AI Agent Framework
-FROM rust:1.75-slim as rust-builder
+FROM rust:1.92-slim as rust-builder
 
 WORKDIR /app
 COPY core/ .
